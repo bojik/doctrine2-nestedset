@@ -73,4 +73,15 @@ interface Node
      * @param int $rgt
      */
     public function setRightValue($rgt);
+
+    /**
+     * @param $root
+     * @return mixed
+     */
+    public function setRootValue($root);
+
+    /**
+     * @return mixed
+     */
+    public function getRootValue();
 }

@@ -19,8 +19,9 @@
 namespace DoctrineExtensions\NestedSet;
 
 use Doctrine\ORM\EntityManager;
-use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Mapping\ClassMetadata;
+use Doctrine\ORM\ORMException;
+use Doctrine\ORM\QueryBuilder;
 
 /**
  * The Config class holds configuration for each NestedSet Manager instance.
@@ -50,7 +51,7 @@ class Config
      * @param mixed $clazz a class name or ClassMetadata object representing
      *   the entity class associated with this configuration
      */
-    public function __construct(EntityManager $em, $clazz=null)
+    public function __construct(EntityManager $em, $clazz = null)
     {
         $this->em = $em;
 
@@ -62,8 +63,7 @@ class Config
         $this->setHydrateLevel(true);
         $this->setHydrateOutlineNumber(true);
 
-        if($clazz)
-        {
+        if ($clazz) {
             $this->setClass($clazz);
         }
     }
@@ -79,36 +79,31 @@ class Config
      */
     public function setClass($clazz)
     {
-        if($clazz instanceof ClassMetadata)
-        {
+        if ($clazz instanceof ClassMetadata) {
             $classMetadata = $clazz;
             $classname = $clazz->getReflectionClass()->getName();
-        }
-        else if (class_exists($clazz))
-        {
-            $classname = $clazz;
-            $classMetadata = $this->getEntityManager()->getClassMetadata($clazz);
-        } else
-        {
-            $parts = explode(':', $clazz);
-            $alias = array_shift($parts);
-            $rest = implode('\\', $parts);
+        } else {
+            if (class_exists($clazz)) {
+                $classname = $clazz;
+                $classMetadata = $this->getEntityManager()->getClassMetadata($clazz);
+            } else {
+                $parts = explode(':', $clazz);
+                $alias = array_shift($parts);
+                $rest = implode('\\', $parts);
 
-            try
-            {
-                $namespace = $this->getEntityManager()->getConfiguration()->getEntityNamespace($alias);
-            }
-            catch (\Doctrine\ORM\ORMException $e) {
-                throw new \InvalidArgumentException("Can't find class: $clazz'");
-            }
+                try {
+                    $namespace = $this->getEntityManager()->getConfiguration()->getEntityNamespace($alias);
+                } catch (ORMException $e) {
+                    throw new \InvalidArgumentException("Can't find class: $clazz'");
+                }
 
-            $classname = $namespace.'\\'.$rest;
-            $classMetadata = $this->getEntityManager()->getClassMetadata($classname);
+                $classname = $namespace . '\\' . $rest;
+                $classMetadata = $this->getEntityManager()->getClassMetadata($classname);
+            }
         }
 
         $reflectionClass = $classMetadata->getReflectionClass();
-        if(!$reflectionClass->implementsInterface('DoctrineExtensions\NestedSet\Node'))
-        {
+        if (!$reflectionClass->implementsInterface('DoctrineExtensions\NestedSet\Node')) {
             throw new \InvalidArgumentException('Class must implement Node interface: ' . $classname);
         }
 
@@ -145,7 +140,7 @@ class Config
     /**
      * Returns the Doctrine entity manager associated with this Manager
      *
-     * @return Doctrine\ORM\EntityManager
+     * @return \Doctrine\ORM\EntityManager
      */
     public function getEntityManager()
     {
@@ -242,8 +237,7 @@ class Config
      */
     public function getBaseQueryBuilder()
     {
-        if(!$this->baseQueryBuilder)
-        {
+        if (!$this->baseQueryBuilder) {
             $this->baseQueryBuilder = $this->getDefaultQueryBuilder();
         }
 
@@ -254,16 +248,13 @@ class Config
     /**
      * sets the base query builder
      *
-     * @param Query $baseQueryBuilder or null to reset the base query builder
+     * @param QueryBuilder $baseQueryBuilder or null to reset the base query builder
      */
-    public function setBaseQueryBuilder(QueryBuilder $baseQueryBuilder=null)
+    public function setBaseQueryBuilder(QueryBuilder $baseQueryBuilder = null)
     {
-        if($baseQueryBuilder === null)
-        {
+        if ($baseQueryBuilder === null) {
             $this->baseQueryBuilder = $this->getDefaultQueryBuilder();
-        }
-        else
-        {
+        } else {
             $this->baseQueryBuilder = $baseQueryBuilder;
         }
     }
@@ -296,34 +287,34 @@ class Config
     {
         return $this->getBaseQueryBuilder()->getRootAlias();
     }
-	
-	public function setQueryHint($name, $value)
-	{
-		$this->queryHintName = $name;			
-		$this->queryHintValue = $value;			
-	}
-	
-	public function getQueryHintName()
-	{
-		return $this->queryHintName;
-	}
-	
-	public function getQueryHintValue()
-	{
-		return $this->queryHintValue;
-	}
-	
-	/**
-	 * Checks Configuration to see if Query Hint has been set
-	 * @return bool 
-	 */
-	public function isQueryHintSet()
-	{
-		if (!$this->GetQueryHintName() || !$this->GetQueryHintValue()){
-			return false;
-		}
-		return true;
-	}
+
+    public function setQueryHint($name, $value)
+    {
+        $this->queryHintName = $name;
+        $this->queryHintValue = $value;
+    }
+
+    public function getQueryHintName()
+    {
+        return $this->queryHintName;
+    }
+
+    public function getQueryHintValue()
+    {
+        return $this->queryHintValue;
+    }
+
+    /**
+     * Checks Configuration to see if Query Hint has been set
+     * @return bool
+     */
+    public function isQueryHintSet()
+    {
+        if (!$this->GetQueryHintName() || !$this->GetQueryHintValue()) {
+            return false;
+        }
+        return true;
+    }
 
     /**
      * Returns true if the level should be hydrated when fetching trees

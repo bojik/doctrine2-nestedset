@@ -54,12 +54,9 @@ class NodeWrapper implements Node
     private $outlineNumbers = null;
 
 
-
-
     public function __construct(Node $node, Manager $manager)
     {
-        if($node instanceof NodeWrapper)
-        {
+        if ($node instanceof NodeWrapper) {
             throw new \InvalidArgumentException('node must not be a NodeWrapper');
         }
 
@@ -84,13 +81,11 @@ class NodeWrapper implements Node
      */
     public function getFirstChild()
     {
-        if($this->isLeaf())
-        {
+        if ($this->isLeaf()) {
             return null;
         }
 
-        if($this->children !== null)
-        {
+        if ($this->children !== null) {
             $ary = array_slice($this->children, 0, 1);
             return $ary[0];
         }
@@ -98,19 +93,18 @@ class NodeWrapper implements Node
         $qb = $this->getManager()->getConfiguration()->getBaseQueryBuilder();
         $alias = $this->getManager()->getConfiguration()->getQueryBuilderAlias();
 
-        $qb->andWhere("$alias.".$this->getLeftFieldName()." = :lft1")
+        $qb->andWhere("$alias." . $this->getLeftFieldName() . " = :lft1")
             ->setParameter('lft1', $this->getLeftValue() + 1);
-        if($this->hasManyRoots())
-        {
-            $qb->andWhere("$alias.".$this->getRootFieldName()." = :root")
+        if ($this->hasManyRoots()) {
+            $qb->andWhere("$alias." . $this->getRootFieldName() . " = :root")
                 ->setParameter('root', $this->getRootValue());
         }
 
         $q = $qb->getQuery();
-		if ($this->getManager()->getConfiguration()->isQueryHintSet()){
-			$q = $this->getManager()->addHintToQuery($q);
-		}
-		$results = $q->getResult();
+        if ($this->getManager()->getConfiguration()->isQueryHintSet()) {
+            $q = $this->getManager()->addHintToQuery($q);
+        }
+        $results = $q->getResult();
 
         return $this->getManager()->wrapNode($results[0]);
     }
@@ -123,13 +117,11 @@ class NodeWrapper implements Node
      */
     public function getLastChild()
     {
-        if($this->isLeaf())
-        {
+        if ($this->isLeaf()) {
             return null;
         }
 
-        if($this->children !== null)
-        {
+        if ($this->children !== null) {
             $ary = array_slice($this->children, -1, 1);
             return $ary[0];
         }
@@ -137,19 +129,18 @@ class NodeWrapper implements Node
         $qb = $this->getManager()->getConfiguration()->getBaseQueryBuilder();
         $alias = $this->getManager()->getConfiguration()->getQueryBuilderAlias();
 
-        $qb->andWhere("$alias.".$this->getRightFieldName()." = :rgt1")
+        $qb->andWhere("$alias." . $this->getRightFieldName() . " = :rgt1")
             ->setParameter('rgt1', $this->getRightValue() - 1);
-        if($this->hasManyRoots())
-        {
-            $qb->andWhere("$alias.".$this->getRootFieldName()." = :root")
+        if ($this->hasManyRoots()) {
+            $qb->andWhere("$alias." . $this->getRootFieldName() . " = :root")
                 ->setParameter('root', $this->getRootValue());
         }
 
         $q = $qb->getQuery();
-		if ($this->getManager()->getConfiguration()->isQueryHintSet()){
-			$q = $this->getManager()->addHintToQuery($q);
-		}
-		$results = $q->getResult();
+        if ($this->getManager()->getConfiguration()->isQueryHintSet()) {
+            $q = $this->getManager()->addHintToQuery($q);
+        }
+        $results = $q->getResult();
 
         return $this->getManager()->wrapNode($results[0]);
     }
@@ -162,8 +153,7 @@ class NodeWrapper implements Node
      */
     public function getChildren()
     {
-        if($this->children === null)
-        {
+        if ($this->children === null) {
             $this->children = $this->getDescendants(1);
         }
 
@@ -180,43 +170,38 @@ class NodeWrapper implements Node
      */
     public function getDescendants($depth = null)
     {
-        if(!$this->hasChildren())
-        {
-            return array();
+        if (!$this->hasChildren()) {
+            return [];
         }
 
-        if($this->descendants === null)
-        {
+        if ($this->descendants === null) {
             $qb = $this->getManager()->getConfiguration()->getBaseQueryBuilder();
             $alias = $this->getManager()->getConfiguration()->getQueryBuilderAlias();
 
-            $qb->andWhere("$alias.".$this->getLeftFieldName()." > :lft1")
+            $qb->andWhere("$alias." . $this->getLeftFieldName() . " > :lft1")
                 ->setParameter('lft1', $this->getLeftValue())
-                ->andWhere("$alias.".$this->getRightFieldName()." < :rgt1")
+                ->andWhere("$alias." . $this->getRightFieldName() . " < :rgt1")
                 ->setParameter('rgt1', $this->getRightValue())
-                ->orderBy("$alias.".$this->getLeftFieldName(), "ASC");
-            if($this->hasManyRoots())
-            {
-                $qb->andWhere("$alias.".$this->getRootFieldName()." = :root")
+                ->orderBy("$alias." . $this->getLeftFieldName(), "ASC");
+            if ($this->hasManyRoots()) {
+                $qb->andWhere("$alias." . $this->getRootFieldName() . " = :root")
                     ->setParameter('root', $this->getRootValue());
             }
 
             // TODO: Add depth support or self join support?
-			$q = $qb->getQuery();
-			if ($this->getManager()->getConfiguration()->isQueryHintSet()){
-				$q = $this->getManager()->addHintToQuery($q);
-			}
+            $q = $qb->getQuery();
+            if ($this->getManager()->getConfiguration()->isQueryHintSet()) {
+                $q = $this->getManager()->addHintToQuery($q);
+            }
             $results = $q->getResult();
 
-            $this->descendants = array();
-            foreach($results as $result)
-            {
+            $this->descendants = [];
+            foreach ($results as $result) {
                 $this->descendants[] = $this->getManager()->wrapNode($result);
             }
         }
 
-        if($depth !== null)
-        {
+        if ($depth !== null) {
             // TODO: Don't rebuild filtered array everytime?
             return $this->getManager()->filterNodeDepth($this->descendants, $depth);
         }
@@ -232,40 +217,36 @@ class NodeWrapper implements Node
      */
     public function getParent()
     {
-        if($this->isRoot())
-        {
+        if ($this->isRoot()) {
             return null;
         }
 
-        if($this->parent == null && $this->ancestors)
-        {
+        if ($this->parent == null && $this->ancestors) {
             // Shortcut if we already loaded the ancestors
-            $this->parent = $this->ancestors[count($this->ancestors)-1];
+            $this->parent = $this->ancestors[count($this->ancestors) - 1];
         }
 
-        if($this->parent == null)
-        {
+        if ($this->parent == null) {
             $qb = $this->getManager()->getConfiguration()->getBaseQueryBuilder();
             $alias = $this->getManager()->getConfiguration()->getQueryBuilderAlias();
 
-            $qb->andWhere("$alias.".$this->getLeftFieldName()." < :lft1")
+            $qb->andWhere("$alias." . $this->getLeftFieldName() . " < :lft1")
                 ->setParameter('lft1', $this->getLeftValue())
-                ->andWhere("$alias.".$this->getRightFieldName()." > :rgt1")
+                ->andWhere("$alias." . $this->getRightFieldName() . " > :rgt1")
                 ->setParameter('rgt1', $this->getRightValue())
-                ->orderBy("$alias.".$this->getRightFieldName(), "ASC")
+                ->orderBy("$alias." . $this->getRightFieldName(), "ASC")
                 ->setMaxResults(1);
-            if($this->hasManyRoots())
-            {
-                $qb->andWhere("$alias.".$this->getRootFieldName()." = :root")
+            if ($this->hasManyRoots()) {
+                $qb->andWhere("$alias." . $this->getRootFieldName() . " = :root")
                     ->setParameter('root', $this->getRootValue());
             }
 
-			$q = $qb->getQuery();
-			if ($this->getManager()->getConfiguration()->isQueryHintSet()){
-				$q = $this->getManager()->addHintToQuery($q);
-			}
-			$results = $q->getResult();
-			
+            $q = $qb->getQuery();
+            if ($this->getManager()->getConfiguration()->isQueryHintSet()) {
+                $q = $this->getManager()->addHintToQuery($q);
+            }
+            $results = $q->getResult();
+
             $this->parent = $this->getManager()->wrapNode($results[0]);
         }
 
@@ -280,36 +261,32 @@ class NodeWrapper implements Node
      */
     public function getAncestors()
     {
-        if($this->isRoot())
-        {
-            return array();
+        if ($this->isRoot()) {
+            return [];
         }
 
-        if($this->ancestors === null)
-        {
+        if ($this->ancestors === null) {
             $qb = $this->getManager()->getConfiguration()->getBaseQueryBuilder();
             $alias = $this->getManager()->getConfiguration()->getQueryBuilderAlias();
 
-            $qb->andWhere("$alias.".$this->getLeftFieldName()." < :lft1")
+            $qb->andWhere("$alias." . $this->getLeftFieldName() . " < :lft1")
                 ->setParameter('lft1', $this->getLeftValue())
-                ->andWhere("$alias.".$this->getRightFieldName()." > :rgt1")
+                ->andWhere("$alias." . $this->getRightFieldName() . " > :rgt1")
                 ->setParameter('rgt1', $this->getRightValue())
-                ->orderBy("$alias.".$this->getLeftFieldName(), "ASC");
-            if($this->hasManyRoots())
-            {
-                $qb->andWhere("$alias.".$this->getRootFieldName()." = :root")
+                ->orderBy("$alias." . $this->getLeftFieldName(), "ASC");
+            if ($this->hasManyRoots()) {
+                $qb->andWhere("$alias." . $this->getRootFieldName() . " = :root")
                     ->setParameter('root', $this->getRootValue());
             }
 
-			$q = $qb->getQuery();
-			if ($this->getManager()->getConfiguration()->isQueryHintSet()){
-				$q = $this->getManager()->addHintToQuery($q);
-			}
-			$results = $q->getResult();
+            $q = $qb->getQuery();
+            if ($this->getManager()->getConfiguration()->isQueryHintSet()) {
+                $q = $this->getManager()->addHintToQuery($q);
+            }
+            $results = $q->getResult();
 
-            $this->ancestors = array();
-            foreach($results as $result)
-            {
+            $this->ancestors = [];
+            foreach ($results as $result) {
                 $this->ancestors[] = $this->getManager()->wrapNode($result);
             }
         }
@@ -325,8 +302,7 @@ class NodeWrapper implements Node
      */
     public function getLevel()
     {
-        if($this->level === null)
-        {
+        if ($this->level === null) {
             $this->level = count($this->getAncestors());
         }
 
@@ -343,21 +319,19 @@ class NodeWrapper implements Node
      *
      * @return string string representation of path
      */
-    public function getPath($separator=' > ', $includeNode=false)
+    public function getPath($separator = ' > ', $includeNode = false)
     {
-        $path = array();
+        $path = [];
 
+        /** @var NodeWrapper[] $ancestors */
         $ancestors = $this->getAncestors();
-        if($ancestors)
-        {
-            foreach($ancestors as $ancestor)
-            {
+        if ($ancestors) {
+            foreach ($ancestors as $ancestor) {
                 $path[] = $ancestor->getNode()->__toString();
             }
         }
 
-        if($includeNode)
-        {
+        if ($includeNode) {
             $path[] = $this->getNode()->__toString();
         }
 
@@ -375,56 +349,51 @@ class NodeWrapper implements Node
      *
      * @return string
      */
-    public function getOutlineNumber($separator='.', $includeRoot=true)
+    public function getOutlineNumber($separator = '.', $includeRoot = true)
     {
-        if($this->outlineNumbers === null)
-        {
-            $numbers = array(1);
+        if ($this->outlineNumbers === null) {
+            $numbers = [1];
 
-            if(!$this->isRoot())
-            {
+            if (!$this->isRoot()) {
+                /** @var NodeWrapper[] $ancestors */
                 $ancestors = $this->getAncestors();
                 $root = $ancestors[0];
 
+                /** @var NodeWrapper[] $rootDescendants */
                 $rootDescendants = $root->getDescendants(count($ancestors));
 
                 $siblingNumber = 1;
                 $level = 1;
                 $pathLevel = 1;
-                $stack = array();
-                foreach($rootDescendants as $wrapper)
-                {
+                $stack = [];
+                foreach ($rootDescendants as $wrapper) {
                     $parent = end($stack);
-                    while($parent && $wrapper->getLeftValue() > $parent->getRightValue())
-                    {
+                    while ($parent && $wrapper->getLeftValue() > $parent->getRightValue()) {
                         array_pop($stack);
                         $parent = end($stack);
                         $level--;
                     }
 
-                    if($wrapper->getLeftValue() <= $this->getLeftValue() && $wrapper->getRightValue() >= $this->getRightValue())
-                    {
+                    if ($wrapper->getLeftValue() <= $this->getLeftValue() && $wrapper->getRightValue() >= $this->getRightValue()) {
                         // On path
 
-                        if($wrapper->isEqualTo($this))
-                        {
+                        if ($wrapper->isEqualTo($this)) {
                             $numbers[] = $siblingNumber;
                             break;
+                        } else {
+                            if ($wrapper->isEqualTo($ancestors[$pathLevel])) {
+                                $numbers[] = $siblingNumber;
+                                $siblingNumber = 1;
+                                $pathLevel++;
+                            }
                         }
-                        else if($wrapper->isEqualTo($ancestors[$pathLevel]))
-                        {
-                            $numbers[] = $siblingNumber;
-                            $siblingNumber = 1;
-                            $pathLevel++;
+                    } else {
+                        if ($pathLevel == $level) {
+                            $siblingNumber++;
                         }
-                    }
-                    else if($pathLevel == $level)
-                    {
-                        $siblingNumber++;
                     }
 
-                    if($wrapper->hasChildren())
-                    {
+                    if ($wrapper->hasChildren()) {
                         array_push($stack, $wrapper);
                         $level++;
                     }
@@ -434,8 +403,7 @@ class NodeWrapper implements Node
             $this->outlineNumbers = $numbers;
         }
 
-        if($includeRoot === false)
-        {
+        if ($includeRoot === false) {
             return implode(array_slice($this->outlineNumbers, 1), $separator);
         }
 
@@ -466,8 +434,6 @@ class NodeWrapper implements Node
     }
 
 
-
-
     /**
      * gets siblings for node
      *
@@ -476,17 +442,14 @@ class NodeWrapper implements Node
      *
      * @return array array of NodeWrapper objects
      */
-    public function getSiblings($includeNode=false)
+    public function getSiblings($includeNode = false)
     {
         $parent = $this->getParent();
-        $siblings = array();
-        if($parent && $parent->isValidNode())
-        {
+        $siblings = [];
+        if ($parent && $parent->isValidNode()) {
             $children = $parent->getChildren();
-            foreach($children as $child)
-            {
-                if(!$includeNode && $this->isEqualTo($child))
-                {
+            foreach ($children as $child) {
+                if (!$includeNode && $this->isEqualTo($child)) {
                     continue;
                 }
                 $siblings[] = $child;
@@ -505,16 +468,13 @@ class NodeWrapper implements Node
     public function getPrevSibling()
     {
         // If parent and children are already loaded, avoid database query
-        if($this->parent !== null && ($children = $this->parent->internalGetChildren()) !== null)
-        {
-            for($i=0; $i<count($children); $i++)
-            {
-                if($children[$i] == $this)
-                {
-                    return ($i-1 < 0) ? null : $children[$i-1];
+        if ($this->parent !== null && ($children = $this->parent->internalGetChildren()) !== null) {
+            for ($i = 0; $i < count($children); $i++) {
+                if ($children[$i] == $this) {
+                    return ($i - 1 < 0) ? null : $children[$i - 1];
                 }
             }
-        // @codeCoverageIgnoreStart
+            // @codeCoverageIgnoreStart
         }
         // @codeCoverageIgnoreEnd
 
@@ -522,22 +482,20 @@ class NodeWrapper implements Node
         $qb = $this->getManager()->getConfiguration()->getBaseQueryBuilder();
         $alias = $this->getManager()->getConfiguration()->getQueryBuilderAlias();
 
-        $qb->andWhere("$alias.".$this->getRightFieldName()." = :rgt1")
+        $qb->andWhere("$alias." . $this->getRightFieldName() . " = :rgt1")
             ->setParameter('rgt1', $this->getLeftValue() - 1);
-        if($this->hasManyRoots())
-        {
-            $qb->andWhere("$alias.".$this->getRootFieldName()." = :root")
+        if ($this->hasManyRoots()) {
+            $qb->andWhere("$alias." . $this->getRootFieldName() . " = :root")
                 ->setParameter('root', $this->getRootValue());
         }
 
         $q = $qb->getQuery();
-		if ($this->getManager()->getConfiguration()->isQueryHintSet()){
-			$q = $this->getManager()->addHintToQuery($q);
-		}
-		$results = $q->getResult();
+        if ($this->getManager()->getConfiguration()->isQueryHintSet()) {
+            $q = $this->getManager()->addHintToQuery($q);
+        }
+        $results = $q->getResult();
 
-        if(!$results)
-        {
+        if (!$results) {
             return null;
         }
 
@@ -553,16 +511,13 @@ class NodeWrapper implements Node
     public function getNextSibling()
     {
         // If parent and children are already loaded, avoid database query
-        if($this->parent !== null && ($children = $this->parent->internalGetChildren()) !== null)
-        {
-            for($i=0; $i<count($children); $i++)
-            {
-                if($children[$i] == $this)
-                {
-                    return ($i+1 >= count($children)) ? null : $children[$i+1];
+        if ($this->parent !== null && ($children = $this->parent->internalGetChildren()) !== null) {
+            for ($i = 0; $i < count($children); $i++) {
+                if ($children[$i] == $this) {
+                    return ($i + 1 >= count($children)) ? null : $children[$i + 1];
                 }
             }
-        // @codeCoverageIgnoreStart
+            // @codeCoverageIgnoreStart
         }
         // @codeCoverageIgnoreEnd
 
@@ -570,22 +525,20 @@ class NodeWrapper implements Node
         $qb = $this->getManager()->getConfiguration()->getBaseQueryBuilder();
         $alias = $this->getManager()->getConfiguration()->getQueryBuilderAlias();
 
-        $qb->andWhere("$alias.".$this->getLeftFieldName()." = :lft1")
+        $qb->andWhere("$alias." . $this->getLeftFieldName() . " = :lft1")
             ->setParameter('lft1', $this->getRightValue() + 1);
-        if($this->hasManyRoots())
-        {
-            $qb->andWhere("$alias.".$this->getRootFieldName()." = :root")
+        if ($this->hasManyRoots()) {
+            $qb->andWhere("$alias." . $this->getRootFieldName() . " = :root")
                 ->setParameter('root', $this->getRootValue());
         }
 
         $q = $qb->getQuery();
-		if ($this->getManager()->getConfiguration()->isQueryHintSet()){
-			$q = $this->getManager()->addHintToQuery($q);
-		}
-		$results = $q->getResult();
+        if ($this->getManager()->getConfiguration()->isQueryHintSet()) {
+            $q = $this->getManager()->addHintToQuery($q);
+        }
+        $results = $q->getResult();
 
-        if(!$results)
-        {
+        if (!$results) {
             return null;
         }
 
@@ -600,6 +553,7 @@ class NodeWrapper implements Node
      */
     public function hasPrevSibling()
     {
+        /** @var NodeWrapper $n */
         $n = $this->getPrevSibling();
         return $n && $n->isValidNode();
     }
@@ -612,6 +566,7 @@ class NodeWrapper implements Node
      */
     public function hasNextSibling()
     {
+        /** @var NodeWrapper $n */
         $n = $this->getNextSibling();
         return $n && $n->isValidNode();
     }
@@ -633,18 +588,15 @@ class NodeWrapper implements Node
      */
     public function insertAsParentOf(NodeWrapper $node)
     {
-        if($node === $this)
-        {
+        if ($node === $this) {
             throw new \InvalidArgumentException('Cannot insert node as a parent of itself');
         }
 
-        if($this->isValidNode())
-        {
+        if ($this->isValidNode()) {
             throw new \InvalidArgumentException('Cannot insert a node that already has a place within the tree');
         }
 
-        if($node->isRoot())
-        {
+        if ($node->isRoot()) {
             throw new \InvalidArgumentException('Cannot insert as parent of root');
         }
 
@@ -658,8 +610,7 @@ class NodeWrapper implements Node
 
         // beginTransaction
         $em->getConnection()->beginTransaction();
-        try
-        {
+        try {
             // Make space for new node
             $this->shiftRLRange($newRgt - 1, 0, 2, $newRoot);
 
@@ -672,9 +623,8 @@ class NodeWrapper implements Node
                 ->setParameter(1, $newLft)
                 ->andWhere("n.$rgtField <= ?2")
                 ->setParameter(2, $newRgt);
-            if($this->hasManyRoots())
-            {
-                $qb->andWhere("n.".$this->getRootFieldName()." = ?3")
+            if ($this->hasManyRoots()) {
+                $qb->andWhere("n." . $this->getRootFieldName() . " = ?3")
                     ->setParameter(3, $newRoot);
             }
             $qb->getQuery()->execute();
@@ -684,9 +634,7 @@ class NodeWrapper implements Node
 
             $em->flush();
             $em->getConnection()->commit();
-        }
-        catch (\Exception $e)
-        {
+        } catch (\Exception $e) {
             // @codeCoverageIgnoreStart
             $em->close();
             $em->getConnection()->rollback();
@@ -704,8 +652,7 @@ class NodeWrapper implements Node
      */
     public function insertAsPrevSiblingOf(NodeWrapper $node)
     {
-        if($node === $this)
-        {
+        if ($node === $this) {
             throw new \InvalidArgumentException('Cannot insert node as a sibling of itself');
         }
 
@@ -716,16 +663,13 @@ class NodeWrapper implements Node
 
         // beginTransaction
         $em->getConnection()->beginTransaction();
-        try
-        {
+        try {
             $this->shiftRLRange($newLeft, 0, 2, $newRoot);
             $this->insertNode($newLeft, $newRight, $newRoot);
 
             $em->flush();
             $em->getConnection()->commit();
-        }
-        catch (\Exception $e)
-        {
+        } catch (\Exception $e) {
             // @codeCoverageIgnoreStart
             $em->close();
             $em->getConnection()->rollback();
@@ -743,8 +687,7 @@ class NodeWrapper implements Node
      */
     public function insertAsNextSiblingOf(NodeWrapper $node)
     {
-        if($node === $this)
-        {
+        if ($node === $this) {
             throw new \InvalidArgumentException('Cannot insert node as a sibling of itself');
         }
 
@@ -755,16 +698,13 @@ class NodeWrapper implements Node
 
         // beginTransaction
         $em->getConnection()->beginTransaction();
-        try
-        {
+        try {
             $this->shiftRLRange($newLeft, 0, 2, $newRoot);
             $this->insertNode($newLeft, $newRight, $newRoot);
 
             $em->flush();
             $em->getConnection()->commit();
-        }
-        catch (\Exception $e)
-        {
+        } catch (\Exception $e) {
             // @codeCoverageIgnoreStart
             $em->close();
             $em->getConnection()->rollback();
@@ -782,8 +722,7 @@ class NodeWrapper implements Node
      */
     public function insertAsFirstChildOf(NodeWrapper $node)
     {
-        if($node === $this)
-        {
+        if ($node === $this) {
             throw new \InvalidArgumentException('Cannot insert node as a child of itself');
         }
 
@@ -794,16 +733,13 @@ class NodeWrapper implements Node
 
         // beginTransaction
         $em->getConnection()->beginTransaction();
-        try
-        {
+        try {
             $this->shiftRLRange($newLeft, 0, 2, $newRoot);
             $this->insertNode($newLeft, $newRight, $newRoot);
 
             $em->flush();
             $em->getConnection()->commit();
-        }
-        catch (\Exception $e)
-        {
+        } catch (\Exception $e) {
             // @codeCoverageIgnoreStart
             $em->close();
             $em->getConnection()->rollback();
@@ -821,8 +757,7 @@ class NodeWrapper implements Node
      */
     public function insertAsLastChildOf(NodeWrapper $node)
     {
-        if($node === $this)
-        {
+        if ($node === $this) {
             throw new \InvalidArgumentException('Cannot insert node as a child of itself');
         }
 
@@ -833,16 +768,13 @@ class NodeWrapper implements Node
 
         // beginTransaction
         $em->getConnection()->beginTransaction();
-        try
-        {
+        try {
             $this->shiftRLRange($newLeft, 0, 2, $newRoot);
             $this->insertNode($newLeft, $newRight, $newRoot);
 
             $em->flush();
             $em->getConnection()->commit();
-        }
-        catch (\Exception $e)
-        {
+        } catch (\Exception $e) {
             // @codeCoverageIgnoreStart
             $em->close();
             $em->getConnection()->rollback();
@@ -860,8 +792,7 @@ class NodeWrapper implements Node
      */
     public function moveAsPrevSiblingOf(NodeWrapper $node)
     {
-        if($node === $this)
-        {
+        if ($node === $this) {
             throw new \InvalidArgumentException('Cannot move node as a sibling of itself');
         }
 
@@ -869,22 +800,16 @@ class NodeWrapper implements Node
 
         // beginTransaction
         $em->getConnection()->beginTransaction();
-        try
-        {
-            if($this->hasManyRoots() && $this->getRootValue() !== $node->getRootValue())
-            {
+        try {
+            if ($this->hasManyRoots() && $this->getRootValue() !== $node->getRootValue()) {
                 $this->moveBetweenTrees($node, $node->getLeftValue(), __FUNCTION__);
-            }
-            else
-            {
+            } else {
                 $this->updateNode($node->getLeftValue());
             }
 
             $em->flush();
             $em->getConnection()->commit();
-        }
-        catch (\Exception $e)
-        {
+        } catch (\Exception $e) {
             // @codeCoverageIgnoreStart
             $em->close();
             $em->getConnection()->rollback();
@@ -902,8 +827,7 @@ class NodeWrapper implements Node
      */
     public function moveAsNextSiblingOf(NodeWrapper $node)
     {
-        if($node === $this)
-        {
+        if ($node === $this) {
             throw new \InvalidArgumentException('Cannot move node as a sibling of itself');
         }
 
@@ -911,22 +835,16 @@ class NodeWrapper implements Node
 
         // beginTransaction
         $em->getConnection()->beginTransaction();
-        try
-        {
-            if($this->hasManyRoots() && $this->getRootValue() !== $node->getRootValue())
-            {
+        try {
+            if ($this->hasManyRoots() && $this->getRootValue() !== $node->getRootValue()) {
                 $this->moveBetweenTrees($node, $node->getRightValue() + 1, __FUNCTION__);
-            }
-            else
-            {
+            } else {
                 $this->updateNode($node->getRightValue() + 1);
             }
 
             $em->flush();
             $em->getConnection()->commit();
-        }
-        catch (\Exception $e)
-        {
+        } catch (\Exception $e) {
             // @codeCoverageIgnoreStart
             $em->close();
             $em->getConnection()->rollback();
@@ -944,8 +862,7 @@ class NodeWrapper implements Node
      */
     public function moveAsFirstChildOf(NodeWrapper $node)
     {
-        if($node === $this)
-        {
+        if ($node === $this) {
             throw new \InvalidArgumentException('Cannot move node as a child of itself');
         }
 
@@ -953,22 +870,16 @@ class NodeWrapper implements Node
 
         // beginTransaction
         $em->getConnection()->beginTransaction();
-        try
-        {
-            if($this->hasManyRoots() && $this->getRootValue() !== $node->getRootValue())
-            {
+        try {
+            if ($this->hasManyRoots() && $this->getRootValue() !== $node->getRootValue()) {
                 $this->moveBetweenTrees($node, $node->getLeftValue() + 1, __FUNCTION__);
-            }
-            else
-            {
+            } else {
                 $this->updateNode($node->getLeftValue() + 1);
             }
 
             $em->flush();
             $em->getConnection()->commit();
-        }
-        catch (\Exception $e)
-        {
+        } catch (\Exception $e) {
             // @codeCoverageIgnoreStart
             $em->close();
             $em->getConnection()->rollback();
@@ -986,8 +897,7 @@ class NodeWrapper implements Node
      */
     public function moveAsLastChildOf(NodeWrapper $node)
     {
-        if($node === $this)
-        {
+        if ($node === $this) {
             throw new \InvalidArgumentException('Cannot move node as a child of itself');
         }
 
@@ -995,22 +905,16 @@ class NodeWrapper implements Node
 
         // beginTransaction
         $em->getConnection()->beginTransaction();
-        try
-        {
-            if($this->hasManyRoots() && $this->getRootValue() !== $node->getRootValue())
-            {
+        try {
+            if ($this->hasManyRoots() && $this->getRootValue() !== $node->getRootValue()) {
                 $this->moveBetweenTrees($node, $node->getRightValue(), __FUNCTION__);
-            }
-            else
-            {
+            } else {
                 $this->updateNode($node->getRightValue());
             }
 
             $em->flush();
             $em->getConnection()->commit();
-        }
-        catch (\Exception $e)
-        {
+        } catch (\Exception $e) {
             // @codeCoverageIgnoreStart
             $em->close();
             $em->getConnection()->rollback();
@@ -1028,14 +932,13 @@ class NodeWrapper implements Node
      */
     public function makeRoot($newRoot)
     {
-        if($this->isRoot())
-        {
+        if ($this->isRoot()) {
             return;
         }
 
-        if(!$this->hasManyRoots())
-        {
-            throw new \BadMethodCallException(sprintf('%s::%s is only supported on multiple root trees', __CLASS__, __METHOD__));
+        if (!$this->hasManyRoots()) {
+            throw new \BadMethodCallException(sprintf('%s::%s is only supported on multiple root trees', __CLASS__,
+                    __METHOD__));
         }
 
         $em = $this->getManager()->getEntityManager();
@@ -1049,10 +952,9 @@ class NodeWrapper implements Node
 
         // beginTransaction
         $em->getConnection()->beginTransaction();
-        try
-        {
+        try {
             // Update descendants lft/rgt/root values
-           $diff = 1 - $oldLft;
+            $diff = 1 - $oldLft;
             $qb = $em->createQueryBuilder()
                 ->update(get_class($this->getNode()), 'n')
                 ->set("n.$lftField", "n.$lftField + ?1")
@@ -1083,9 +985,7 @@ class NodeWrapper implements Node
 
             $em->flush();
             $em->getConnection()->commit();
-        }
-        catch (\Exception $e)
-        {
+        } catch (\Exception $e) {
             // @codeCoverageIgnoreStart
             $em->close();
             $em->getConnection()->rollback();
@@ -1105,10 +1005,8 @@ class NodeWrapper implements Node
      */
     public function addChild(Node $node)
     {
-        if($node instanceof NodeWrapper)
-        {
-            if($node === $this)
-            {
+        if ($node instanceof NodeWrapper) {
+            if ($node === $this) {
                 throw new \InvalidArgumentException('Cannot insert node as a child of itself');
             }
 
@@ -1118,8 +1016,7 @@ class NodeWrapper implements Node
 
         $node->setLeftValue($this->getRightValue());
         $node->setRightValue($this->getRightValue() + 1);
-        if($this->hasManyRoots())
-        {
+        if ($this->hasManyRoots()) {
             $node->setRootValue($this->getRootValue());
         }
 
@@ -1127,17 +1024,14 @@ class NodeWrapper implements Node
 
         // beginTransaction
         $em->getConnection()->beginTransaction();
-        try
-        {
+        try {
             $this->shiftRLRange($this->getRightValue(), 0, 2, ($this->hasManyRoots() ? $this->getRootValue() : null));
 
             $em->persist($node);
 
             $em->flush();
             $em->getConnection()->commit();
-        }
-        catch (\Exception $e)
-        {
+        } catch (\Exception $e) {
             // @codeCoverageIgnoreStart
             $em->close();
             $em->getConnection()->rollback();
@@ -1166,17 +1060,15 @@ class NodeWrapper implements Node
 
         // beginTransaction
         $em->getConnection()->beginTransaction();
-        try
-        {
+        try {
             $qb = $em->createQueryBuilder()
                 ->delete(get_class($this->getNode()), 'n')
                 ->where("n.$lftField >= ?1")
                 ->setParameter(1, $oldLft)
                 ->andWhere("n.$rgtField <= ?2")
                 ->setParameter(2, $oldRgt);
-            if($this->hasManyRoots())
-            {
-                $qb->andWhere("n.".$this->getRootFieldName()." = ?3")
+            if ($this->hasManyRoots()) {
+                $qb->andWhere("n." . $this->getRootFieldName() . " = ?3")
                     ->setParameter(3, $oldRoot);
             }
             $qb->getQuery()->execute();
@@ -1189,9 +1081,7 @@ class NodeWrapper implements Node
 
             $em->flush();
             $em->getConnection()->commit();
-        }
-        catch (\Exception $e)
-        {
+        } catch (\Exception $e) {
             // @codeCoverageIgnoreStart
             $em->close();
             $em->getConnection()->rollback();
@@ -1213,12 +1103,11 @@ class NodeWrapper implements Node
      * @param mixed $destRoot
      *
      */
-    protected function insertNode($destLeft, $destRight, $destRoot=null)
+    protected function insertNode($destLeft, $destRight, $destRoot = null)
     {
         $this->setLeftValue($destLeft);
         $this->setRightValue($destRight);
-        if($this->hasManyRoots())
-        {
+        if ($this->hasManyRoots()) {
             $this->setRootValue($destRoot);
         }
         $this->getManager()->getEntityManager()->persist($this->getNode());
@@ -1245,8 +1134,7 @@ class NodeWrapper implements Node
         // Make room in the new branch
         $this->shiftRLRange($destLeft, 0, $treeSize, $root);
 
-        if($left >= $destLeft)
-        {
+        if ($left >= $destLeft) {
             // src was shifted too
             $left += $treeSize;
             $right += $treeSize;
@@ -1277,26 +1165,23 @@ class NodeWrapper implements Node
     {
         $em = $this->getManager()->getEntityManager();
 
-        foreach(array($this->getLeftFieldName(), $this->getRightFieldName()) as $field)
-        {
+        foreach ([$this->getLeftFieldName(), $this->getRightFieldName()] as $field) {
             // Prepare left & right query
             $metadata = $em->getClassMetadata(get_class($this->getNode()));
-            $q = $em->createQueryBuilder()            
-            ->update($metadata->rootEntityName, 'n')
-            ->set("n.$field", "n.$field + :delta")
-            ->setParameter('delta', $delta)
-            ->where("n.$field >= :lowerbound")
-            ->setParameter('lowerbound', $first);
+            $q = $em->createQueryBuilder()
+                ->update($metadata->rootEntityName, 'n')
+                ->set("n.$field", "n.$field + :delta")
+                ->setParameter('delta', $delta)
+                ->where("n.$field >= :lowerbound")
+                ->setParameter('lowerbound', $first);
 
-            if($last > 0)
-            {
+            if ($last > 0) {
                 $q->andWhere("n.$field <= :upperbound")
                     ->setParameter('upperbound', $last);
             }
 
-            if($this->hasManyRoots())
-            {
-                $q->andWhere("n.".$this->getRootFieldName()." = :root")
+            if ($this->hasManyRoots()) {
+                $q->andWhere("n." . $this->getRootFieldName() . " = :root")
                     ->setParameter('root', $rootVal);
             }
 
@@ -1322,11 +1207,10 @@ class NodeWrapper implements Node
      */
     protected function moveBetweenTrees(NodeWrapper $node, $newLeftValue, $moveType)
     {
-        if(!$this->hasManyRoots())
-        {
-            // @codeCoverageIgnoreStart
-            throw new \BadMethodCallException(sprintf('%s::%s is only supported on multiple root trees', __CLASS__, __METHOD__));
-            // @codeCoverageIgnoreEnd
+        if (!$this->hasManyRoots()) {
+            throw new \BadMethodCallException(
+                sprintf('%s::%s is only supported on multiple root trees. %s', __CLASS__, __METHOD__, $moveType)
+            );
         }
 
         $em = $this->getManager()->getEntityManager();
@@ -1374,18 +1258,6 @@ class NodeWrapper implements Node
         $delta = $oldLft - $oldRgt - 1;
         $this->shiftRLRange($first, 0, $delta, $oldRoot);
     }
-
-
-
-
-
-
-
-    //
-    // State Methods
-    // These methods require no datbase calls
-    //
-
 
     /**
      * Returns the wrapped node
@@ -1478,8 +1350,8 @@ class NodeWrapper implements Node
     public function isDescendantOf(Node $node)
     {
         return (($this->getLeftValue() > $node->getLeftValue()) &&
-                ($this->getRightValue() < $node->getRightValue()) &&
-                (!$this->hasManyRoots() || ($this->getRootValue() == $node->getRootValue())));
+            ($this->getRightValue() < $node->getRightValue()) &&
+            (!$this->hasManyRoots() || ($this->getRootValue() == $node->getRootValue())));
     }
 
 
@@ -1493,8 +1365,8 @@ class NodeWrapper implements Node
     public function isAncestorOf(Node $node)
     {
         return (($this->getLeftValue() < $node->getLeftValue()) &&
-                ($this->getRightValue() > $node->getRightValue()) &&
-                (!$this->hasManyRoots() || ($this->getRootValue() == $node->getRootValue())));
+            ($this->getRightValue() > $node->getRightValue()) &&
+            (!$this->hasManyRoots() || ($this->getRootValue() == $node->getRootValue())));
     }
 
 
@@ -1508,15 +1380,9 @@ class NodeWrapper implements Node
     public function isEqualTo(Node $node)
     {
         return (($this->getLeftValue() == $node->getLeftValue()) &&
-                ($this->getRightValue() == $node->getRightValue()) &&
-                (!$this->hasManyRoots() || ($this->getRootValue() == $node->getRootValue())));
+            ($this->getRightValue() == $node->getRightValue()) &&
+            (!$this->hasManyRoots() || ($this->getRootValue() == $node->getRootValue())));
     }
-
-
-
-
-
-
 
 
     /**
@@ -1553,18 +1419,6 @@ class NodeWrapper implements Node
         return $this->getManager()->getConfiguration()->hasManyRoots();
     }
 
-
-
-
-
-
-
-
-    //
-    // Internal methods
-    // Use of these methods outside the NestedSet package is not recommended
-    //
-
     /**
      * INTERNAL
      */
@@ -1579,9 +1433,8 @@ class NodeWrapper implements Node
      */
     public function internalAddChild(NodeWrapper $child)
     {
-        if($this->children === null)
-        {
-            $this->children = array();
+        if ($this->children === null) {
+            $this->children = [];
         }
 
         $this->children[] = $child;
@@ -1593,9 +1446,8 @@ class NodeWrapper implements Node
      */
     public function internalAddDescendant(NodeWrapper $descendant)
     {
-        if($this->descendants === null)
-        {
-            $this->descendants = array();
+        if ($this->descendants === null) {
+            $this->descendants = [];
         }
 
         $this->descendants[] = $descendant;
@@ -1636,8 +1488,6 @@ class NodeWrapper implements Node
     {
         $this->outlineNumbers = $numbers;
     }
-
-
 
     //
     // Node Interface Methods
